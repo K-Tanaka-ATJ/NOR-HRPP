@@ -1,0 +1,7 @@
+export ARCH=arm
+export CROSS_COMPILE=arm-linux-gnueabi-
+
+make distclean
+make mx6ssabresd_config
+make
+
