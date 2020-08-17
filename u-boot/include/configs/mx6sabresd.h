@@ -33,7 +33,7 @@
 
 /* 機種タイプを自動判別するマクロ <kuri0706> */
 /* これにより、前述のTOYOTA向け区別のマクロは不要 */
-#define BSP_SUPPORT_AUTOSELECT
+/* #define BSP_SUPPORT_AUTOSELECT*/
 
 /* 機種タイプを自動判別するマクロ有効時に判別結果をTOYOTA固定するマクロ <kuri0906>*/
 /* 前述の自動判別マクロが有効時のみ本マクロも有効となる */
@@ -41,11 +41,15 @@
 
 /* for version check <kuri0428> */
 /* OS書き込み時にBootLoaderとOS間で整合性をチェックする */
-#define BSP_SUPPORT_VERCHK
+/* #define BSP_SUPPORT_VERCHK */
 
 /* for version check <kuri0512> ver0.16 */
 /* OSをメディアから読み出し時にSUM ERRORだったらエラーアクションを変える修正 */
 #define BSP_SUPPORT_SUMERR
+
+/* 以下の定義は無効にすること */
+/* BSP_SUPPORT_VERCHK, BSP_SUPPORT_AUTOSELECT, BSP_SUPPORT_TOYOTA */
+#define BSP_SUPPORT_HIRATA
 
 #ifdef IMX6SOLO_PP
 #define PHYS_SDRAM_SIZE     (1u * 256 * 1024 * 1024)

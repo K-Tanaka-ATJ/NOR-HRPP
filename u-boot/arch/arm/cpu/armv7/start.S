@@ -90,6 +90,17 @@ save_boot_params_ret:
 	str r1, [r0, r2]
 
 	ldr r0, ANATOP_BASE_ADDR_W
+
+	/* set PMU_REG_CORE <tanaka20200114>*/
+	ldr r1, =0x4C2616
+	ldr r2, =0x00000140
+	str r1, [r0, r2]
+
+	/* set PMU_REG_3P0 <tanaka20200114>*/
+	ldr r1, =0xF77
+	ldr r2, =0x00000120
+	str r1, [r0, r2]
+
 	/* power up PLL */
 	ldr r1, =0x7f
 	ldr r2, =0x00000008

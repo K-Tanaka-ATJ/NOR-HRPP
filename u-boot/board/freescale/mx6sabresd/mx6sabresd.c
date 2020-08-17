@@ -129,17 +129,24 @@ enum boot_device {
 unsigned char g_AutoSel;	//機種自動判別結果保管。=0:標準、=1:TOYOTA
 
 //TOYOTA向けバージョン情報           123456789012345
-const unsigned char UBOOT_VERT[] = {"1.00T          "};	//TOYOTA version. 
+//const unsigned char UBOOT_VERT[] = {"1.00T          "};	//TOYOTA version. 
+const unsigned char UBOOT_VERT[] = {"1.01T          "};	//TOYOTA version. --> PMUレジスタ値変更<tanaka20200114>
 //標準版バージョン情報               123456789012345
-const unsigned char UBOOT_VER[] =  {"1.01           "};	//Original version. 
+//const unsigned char UBOOT_VER[] =  {"1.01           "};	//Original version. 
+const unsigned char UBOOT_VER[] =  {"1.02           "};	//Original version.  --> PMUレジスタ値変更<tanaka20200114>
 #else	//BSP_SUPPORT_AUTOSELECT <kuri0706> 自動判別対応
 
 #ifdef	BSP_SUPPORT_TOYOTA	//<kuri0426>
 //TOYOTA向けバージョン情報
 const unsigned char UBOOT_VER[] = {"0.40T          "};	//Original version. 
 #else	//BSP_SUPPORT_TOYOTA <kuri0426>
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20190819>
+//バージョン情報
+const unsigned char UBOOT_VER[] = {"1.00H          "};
+#else	//BSP_SUPPORT_HIRATA <tanaka20190819>
 //標準版バージョン情報
 const unsigned char UBOOT_VER[] = {"1.00           "};	//Original version. 
+#endif	//BSP_SUPPORT_HIRATA <tanaka20190819>
 #endif	//BSP_SUPPORT_TOYOTA <kuri0426>
 
 #endif	//BSP_SUPPORT_AUTOSELECT <kuri0706> 自動判別対応
@@ -233,6 +240,19 @@ const unsigned char UBOOT_VER[] = {"1.00           "};	//Original version.
 // 標準版とTOYOTA版をキーボードの折り返しで判別する機能の追加。正式版。
 // BSP_SUPPORT_AUTOSELECT が定義されていれば有効。
 // ------------------------------------------------------------------------
+// ver1.02/1.01T-----------------------------------------------------------
+// 2020/01/20
+// PMU_REG_CORE、PMU_REG_3P0の設定処理を追加
+// （ブルースクリーン不具合対策）
+// ver1.00H---------------------------------------------------------------
+// 2019/8/19～2019//
+//      処理を追加。
+//      mx6sabresd.hは以下のように定義を変更すること
+//      BSP_SUPPORT_AUTOSELECT 無効
+//      BSP_SUPPORT_TOYOTA        無効
+//      BSP_SUPPORT_HIRATA         有効
+//      BSP_SUPPORT_VERCHK        無効
+// ------------------------------------------------------------------------
 // NewPP+ 20150727 
 
 #if 1	//<kuri0926>
@@ -257,6 +277,7 @@ void BlinkAllLEDs(int on);
 int os_boot_submain(void);
 
 void SW_LED(int on);	//<kuri0926>
+void print_pmu_reg(void);	//<tanaka20200114>
 
 
 /* -Modified for iMX6Solo_PP at 2015/09/09 by Akita */
@@ -1355,6 +1376,9 @@ static void setup_gpio(void)
 	udelay(10*1000);
 #endif	//<kuri0317>
 
+#if 1	//<tanaka20200114>
+	print_pmu_reg();
+#endif
 }
 
 static void ccm_init(void)
@@ -2595,6 +2619,25 @@ iomux_v3_cfg_t key_pads[] = {
 #endif //KEYINFO_EXIST  //2015/07/19 kuri NewPP-
 };
 
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+iomux_v3_cfg_t les_pads[] = {
+    MX6_PAD_EIM_D16__GPIO3_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO16:K_LED0
+    MX6_PAD_EIM_D17__GPIO3_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO17:K_LED1
+    MX6_PAD_EIM_D18__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO18:K_LED2
+    MX6_PAD_EIM_D22__GPIO3_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO22:K_LED5
+    MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO23:LED8
+    MX6_PAD_EIM_D26__GPIO3_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO26:LED9
+    MX6_PAD_EIM_D27__GPIO3_IO27 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO27:LED10
+    MX6_PAD_EIM_D29__GPIO3_IO29 | MUX_PAD_CTRL(NO_PAD_CTRL),
+    MX6_PAD_EIM_D30__GPIO3_IO30 | MUX_PAD_CTRL(NO_PAD_CTRL),
+    MX6_PAD_EIM_D31__GPIO3_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO31:LED1a-1c
+};
+
+iomux_v3_cfg_t sw_les_pads[] = {
+    MX6_PAD_EIM_D19__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO29:K_LED3
+    MX6_PAD_EIM_D20__GPIO3_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO30:K_LED4
+};
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
 iomux_v3_cfg_t les_pads[] = {
     MX6_PAD_EIM_D16__GPIO3_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO16:LED2
     MX6_PAD_EIM_D17__GPIO3_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO17:LED3
@@ -2618,7 +2661,7 @@ iomux_v3_cfg_t sw_les_pads[] = {
     MX6_PAD_EIM_D30__GPIO3_IO30 | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO3_IO30:START LED
 };
 #endif	//<kuri0925> START/HOLD は処理を分ける
-
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 
 static iomux_v3_cfg_t const pwm3_pads[] = {
     MX6_PAD_SD4_DAT1__PWM3_OUT      | MUX_PAD_CTRL(NO_PAD_CTRL),	//GPIO2_IO09:PWM OUT
@@ -2718,7 +2761,18 @@ static void DumpMemory(u32* pAddr, int words)
 static void setup_led(void)
 {
     imx_iomux_v3_setup_multiple_pads(les_pads, ARRAY_SIZE(les_pads));
-
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_direction_output(LED_GPIO3_16, 0);
+    gpio_direction_output(LED_GPIO3_17, 0);
+    gpio_direction_output(LED_GPIO3_18, 0);
+    gpio_direction_output(LED_GPIO3_22, 0);
+    gpio_direction_output(LED_GPIO3_23, 0);
+    gpio_direction_output(LED_GPIO3_26, 0);
+    gpio_direction_output(LED_GPIO3_27, 0);
+    gpio_direction_output(LED_GPIO3_29, 0);
+    gpio_direction_output(LED_GPIO3_30, 0);
+    gpio_direction_output(LED_GPIO3_31, 0);
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_direction_output(LED_GPIO3_16, 0);
     gpio_direction_output(LED_GPIO3_17, 0);
     gpio_direction_output(LED_GPIO3_18, 0);
@@ -2733,14 +2787,20 @@ static void setup_led(void)
     gpio_direction_output(LED_GPIO3_30, 0);
 #endif	//<kuri0925>  START/HOLD は処理を分ける
     gpio_direction_output(LED_GPIO3_31, 0);
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 }
 
 #if 1	//<kuri0925>  START/HOLD は処理を分ける
 static void setup_sw_led(void)
 {
     imx_iomux_v3_setup_multiple_pads(sw_les_pads, ARRAY_SIZE(sw_les_pads));
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_direction_output(LED_GPIO3_19, 0);
+    gpio_direction_output(LED_GPIO3_20, 0);
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_direction_output(LED_GPIO3_29, 0);
     gpio_direction_output(LED_GPIO3_30, 0);
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 }
 #endif	//<kuri0925>  START/HOLD は処理を分ける
 
@@ -2833,6 +2893,28 @@ void BlinkFourLEDs(int led)
         break;
     }
 #else	//BSP_SUPPORT_TOYOTA <kuri0426>
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20190819>
+	//仕様
+    switch (led)
+    {
+    case 0:
+    case 2:
+        /* K_LED0:ON  K_LED1:OFF*/
+        gpio_set_value(LED_GPIO3_16, 1);
+        gpio_set_value(LED_GPIO3_17, 0);
+        break;
+
+    case 1:
+    case 3:
+        /* K_LED0:OFF  K_LED1:ON*/
+        gpio_set_value(LED_GPIO3_16, 0);
+        gpio_set_value(LED_GPIO3_17, 1);
+        break;
+
+    default:
+        break;
+    }
+#else	//BSP_SUPPORT_HIRATA <tanaka20190819>
     switch (led)
     {
     case 0:
@@ -2870,6 +2952,7 @@ void BlinkFourLEDs(int led)
     default:
         break;
     }
+#endif	//BSP_SUPPORT_HIRATA <tanaka20190819>
 #endif	//BSP_SUPPORT_TOYOTA <kuri0426>
 #endif	//BSP_SUPPORT_AUTOSELECT <kuri0706> 自動判別対応
 }
@@ -2878,6 +2961,19 @@ void BlinkAllLEDs(int on)
 {
     setup_led();
 
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_set_value(LED_GPIO3_16, on);
+    gpio_set_value(LED_GPIO3_17, on);
+    gpio_set_value(LED_GPIO3_18, on);
+    gpio_set_value(LED_GPIO3_22, on);
+    //未使用
+    gpio_set_value(LED_GPIO3_23, 0);
+    gpio_set_value(LED_GPIO3_26, 0);
+    gpio_set_value(LED_GPIO3_27, 0);
+    gpio_set_value(LED_GPIO3_29, 0);
+    gpio_set_value(LED_GPIO3_30, 0);
+    gpio_set_value(LED_GPIO3_31, 0);
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_set_value(LED_GPIO3_16, on);
     gpio_set_value(LED_GPIO3_17, on);
     gpio_set_value(LED_GPIO3_18, on);
@@ -2892,14 +2988,20 @@ void BlinkAllLEDs(int on)
     gpio_set_value(LED_GPIO3_30, on);
 #endif	//<kuri0925>  START/HOLD は処理を分ける
     gpio_set_value(LED_GPIO3_31, on);
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 }
 
 #if 1	//<kuri0925>  START/HOLD は処理を分ける
 void SW_LED(int on)
 {
     setup_sw_led();
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_set_value(LED_GPIO3_19, on);
+    gpio_set_value(LED_GPIO3_20, on);
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_set_value(LED_GPIO3_29, on);
     gpio_set_value(LED_GPIO3_30, on);
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 }
 #endif	//<kuri0925>  START/HOLD は処理を分ける
 
@@ -2914,11 +3016,25 @@ void BuzzerInit(void)
 
 void BuzzerBeep(u32 beepTime)
 {
+#ifdef	BSP_SUPPORT_HIRATA
+    //APPと区別のため、変更
+    pwm_enable(PWM3_ID);
+    udelay(beepTime/2);
+    pwm_disable(PWM3_ID);
+
+    udelay(beepTime);
+
+    pwm_enable(PWM3_ID);
+    udelay(beepTime/2);
+    pwm_disable(PWM3_ID);
+
+#else	//BSP_SUPPORT_HIRATA
     /* Start beep.  */
     pwm_enable(PWM3_ID);
     udelay(beepTime);
     /* Stop beep.   */
     pwm_disable(PWM3_ID);
+#endif	//BSP_SUPPORT_HIRATA
 }
 
 void key_init(void)
@@ -3459,7 +3575,9 @@ int DetectBootKey(void)
 		}
 		
 #else	//BSP_SUPPORT_TOYOTA <kuriu0426>
+//#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20190819> -->APPと同じ起動キーのため、処理をわけない
 
+//#else	//BSP_SUPPORT_HIRATA <tanaka20190819> -->APPと同じ起動キーのため、処理をわけない
 		switch (index)
 		{
 		case 0:
@@ -3610,6 +3728,7 @@ int DetectBootKey(void)
 		default:
 			break;
 		}
+//#endif	//BSP_SUPPORT_HIRATA <tanaka20190819> -->APPと同じ起動キーのため、処理をわけない
 #endif	//BSP_SUPPORT_TOYOTA <kuriu0426>
 
 #endif	//BSP_SUPPORT_AUTOSELECT <kuri0706> 自動判別対応
@@ -4440,6 +4559,9 @@ int osBoot_fat_fsload_bin(const char *devname, const char *devnum, unsigned char
 	//PDWORD		pdwTotalReadSize;
 	//NkInfo		Info;
 	unsigned char *pCurrentAddr = (unsigned char *)IMAGE_BOOT_NKIMAGE_RAM_PA_STORE_START;
+	//<tanaka20190902>
+	bool			ram_init=false;
+
 //YPP-EBOOT
 
 	printf ("osBoot_fat_fsload_bin: (in)\n");	// @CG
@@ -4612,6 +4734,13 @@ int osBoot_fat_fsload_bin(const char *devname, const char *devnum, unsigned char
 			//pBuffer = (PBYTE)(ModuleHeader.dwAddress + CACHED_TO_UNCACHED_OFFSET);
 			pBuffer = (PBYTE)(ModuleHeader.dwAddress - 0x70000000);	//NK.BIN内のアドレスは0x8060_0000ベースだが、書き込み先は0x1060_0000なので0x7000_0000を引く
 			pBuffer2 = pBuffer;
+			//<tanaka20190902>
+			if(!ram_init)
+			{
+				printf("NK.bin RAM initial start...\n");
+				memset(pBuffer, 0xff, IMAGE_BOOT_NKIMAGE_NOR_SIZE);
+				ram_init = true;
+			}
 
 			//BOOL LoadModule()関数
 			{
@@ -4781,8 +4910,13 @@ int osBoot_Mode_1245(int mode)
     memset(FileName, 0, sizeof(FileName));
 
 #if 1	//<kuri0926>
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_set_value(LED_GPIO3_19, 1);		//K_LED3 ON
+    gpio_set_value(LED_GPIO3_20, 0);		//K_LED4 OFF
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_set_value(LED_GPIO3_30, 1);		//START LED ON
     gpio_set_value(LED_GPIO3_29, 0);		//HOLD LED OFF
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 #endif	//<kuri0926>
 
     TimerInit(250);
@@ -5011,8 +5145,13 @@ int osBoot_Mode_1245(int mode)
     }
 
 #if 1	//<kuri0926>
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_set_value(LED_GPIO3_19, 0);		//K_LED3 OFF
+    gpio_set_value(LED_GPIO3_20, 1);		//K_LED4 ON
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_set_value(LED_GPIO3_30, 0);		//START LED OFF
     gpio_set_value(LED_GPIO3_29, 1);		//HOLD LED ON
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 #endif	//<kuri0926>
 
     /* Search on SD card */
@@ -5144,8 +5283,13 @@ int osBoot_Mode_1245(int mode)
     }
     
 #if 1	//<kuri0926>
+#ifdef	BSP_SUPPORT_HIRATA	//<tanaka20200610>
+    gpio_set_value(LED_GPIO3_19, 0);		//K_LED3 OFF
+    gpio_set_value(LED_GPIO3_20, 0);		//K_LED4 OFF
+#else	//BSP_SUPPORT_HIRATA <tanaka20200610>
     gpio_set_value(LED_GPIO3_30, 0);		//START LED OFF
     gpio_set_value(LED_GPIO3_29, 0);		//HOLD LED OFF
+#endif	//BSP_SUPPORT_HIRATA <tanaka20200610>
 #endif	//<kuri0926>
 
 
@@ -5364,4 +5508,16 @@ int os_boot_submain(void)
 
 #endif /* IMX6SOLO_PP */
 /* -Modified for iMX6Solo_PP at 2015/08/18 by Akita */
+
+/* <tanaka20200114> */
+void print_pmu_reg(void)
+{
+	struct anatop_regs *anatop = (struct anatop_regs *)ANATOP_BASE_ADDR;
+	u32 reg;
+
+	reg = readl(&anatop->reg_core);
+	printf ("PMU_REG_CORE: 0x%8X\n", reg);
+	reg = readl(&anatop->reg_3p0);
+	printf ("PMU_REG_3P0: 0x%8X\n", reg);
+}
 
