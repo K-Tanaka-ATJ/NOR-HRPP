@@ -17,14 +17,15 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
+#    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         # Override automatic language detection by changing the below list
         # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python']
-        language: ['cpp', 'python']
+        language: ['cpp']
         # Learn more...
         # https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#overriding-automatic-language-detection
 
@@ -53,8 +54,8 @@ jobs:
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    #- name: Autobuild
+    #  uses: github/codeql-action/autobuild@v1
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
@@ -66,6 +67,14 @@ jobs:
     #- run: |
     #   make bootstrap
     #   make release
-
+    - name: Build
+      run: |
+        sudo apt-get install gcc-arm*
+        export ARCH=arm
+        export CROSS_COMPILE=arm-linux-gnueabi-
+        make distclean
+        make mx6ssabresd_config
+        make
+        
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
