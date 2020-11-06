@@ -69,6 +69,7 @@ jobs:
     #   make release
     - name: Build
       run: |
+        cd u-boot
         sudo apt-get install gcc-arm*
         export ARCH=arm
         export CROSS_COMPILE=arm-linux-gnueabi-
